@@ -6,76 +6,90 @@
  * @flow
  */
 
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import {
     StyleSheet,
     View,
     Animated,
     Dimensions,
     Text,
-    ViewPropTypes as RNViewPropTypes,
-} from 'react-native'
+    ViewPropTypes as RNViewPropTypes
+} from "react-native";
 
 const ViewPropTypes = RNViewPropTypes || View.propTypes;
- 
+
 export const DURATION = {
     LENGTH_LONG: 2000,
     LENGTH_SHORT: 500,
-    FOREVER: 0,
+    FOREVER: 0
 };
 
-const {height, width} = Dimensions.get('window');
+const { height, width } = Dimensions.get("window");
 
 export default class Toast extends Component {
-
     constructor(props) {
         super(props);
 
         this.state = {
             isShow: false,
-            text: '',
-            opacityValue: new Animated.Value(this.props.opacity),
-        }
+            textComponent: null,
+            text: "",
+            opacityValue: new Animated.Value(this.props.opacity)
+        };
     }
 
     show(text, duration) {
-        this.duration = typeof duration === 'number' ? duration : DURATION.LENGTH_SHORT;
+        this.duration =
+            typeof duration === "number" ? duration : DURATION.LENGTH_SHORT;
 
         this.setState({
             isShow: true,
-            text: text,
+            text: text
         });
 
-        Animated.timing(
-            this.state.opacityValue,
-            {
-                toValue: this.props.opacity,
-                duration: this.props.fadeInDuration,
-            }
-        ).start(() => {
+        Animated.timing(this.state.opacityValue, {
+            toValue: this.props.opacity,
+            duration: this.props.fadeInDuration
+        }).start(() => {
             this.isShow = true;
-            if(duration !== DURATION.FOREVER) this.close();
+            if (duration !== DURATION.FOREVER) this.close();
         });
     }
 
-    close( duration ) {
-        let delay = typeof duration === 'undefined' ? this.duration : duration;
+    showComponent(textComponent, duration) {
+        this.duration =
+            typeof duration === "number" ? duration : DURATION.LENGTH_SHORT;
 
-        if(delay === DURATION.FOREVER) delay = this.props.defaultCloseDelay || 250;
+        this.setState({
+            isShow: true,
+            textComponent: textComponent
+        });
+
+        Animated.timing(this.state.opacityValue, {
+            toValue: this.props.opacity,
+            duration: this.props.fadeInDuration
+        }).start(() => {
+            this.isShow = true;
+            if (duration !== DURATION.FOREVER) this.close();
+        });
+    }
+
+    close(duration) {
+        let delay = typeof duration === "undefined" ? this.duration : duration;
+
+        if (delay === DURATION.FOREVER)
+            delay = this.props.defaultCloseDelay || 250;
 
         if (!this.isShow && !this.state.isShow) return;
         this.timer && clearTimeout(this.timer);
         this.timer = setTimeout(() => {
-            Animated.timing(
-                this.state.opacityValue,
-                {
-                    toValue: 0.0,
-                    duration: this.props.fadeOutDuration,
-                }
-            ).start(() => {
+            Animated.timing(this.state.opacityValue, {
+                toValue: 0.0,
+                duration: this.props.fadeOutDuration
+            }).start(() => {
                 this.setState({
-                    isShow: false,
+                    isShow: false
                 });
                 this.isShow = false;
             });
@@ -89,70 +103,74 @@ export default class Toast extends Component {
     render() {
         let pos;
         switch (this.props.position) {
-            case 'top':
+            case "top":
                 pos = this.props.positionValue;
                 break;
-            case 'center':
+            case "center":
                 pos = height / 2;
                 break;
-            case 'bottom':
+            case "bottom":
                 pos = height - this.props.positionValue;
                 break;
         }
 
-        const view = this.state.isShow ?
-            <View
-                style={[styles.container, { top: pos }]}
-                pointerEvents="none"
-            >
+        const text = this.state.textComponent ? (
+            this.state.textComponent
+        ) : (
+            <Text style={this.props.textStyle}>{this.state.text}</Text>
+        );
+
+        const view = this.state.isShow ? (
+            <View style={[styles.container, { top: pos }]} pointerEvents="none">
                 <Animated.View
-                    style={[styles.content, { opacity: this.state.opacityValue }, this.props.style]}
+                    style={[
+                        styles.content,
+                        { opacity: this.state.opacityValue },
+                        this.props.style
+                    ]}
                 >
-                    <Text style={this.props.textStyle}>{this.state.text}</Text>
+                    {text}
                 </Animated.View>
-            </View> : null;
+            </View>
+        ) : null;
         return view;
     }
 }
 
 const styles = StyleSheet.create({
     container: {
-        position: 'absolute',
+        position: "absolute",
         left: 0,
         right: 0,
         elevation: 999,
-        alignItems: 'center',
-        zIndex: 10000,
+        alignItems: "center",
+        zIndex: 10000
     },
     content: {
-        backgroundColor: 'black',
+        backgroundColor: "black",
         borderRadius: 5,
-        padding: 10,
+        padding: 10
     },
     text: {
-        color: 'white'
+        color: "white"
     }
 });
 
 Toast.propTypes = {
     style: ViewPropTypes.style,
-    position: PropTypes.oneOf([
-        'top',
-        'center',
-        'bottom',
-    ]),
+    position: PropTypes.oneOf(["top", "center", "bottom"]),
     textStyle: Text.propTypes.style,
-    positionValue:PropTypes.number,
-    fadeInDuration:PropTypes.number,
-    fadeOutDuration:PropTypes.number,
-    opacity:PropTypes.number
-}
+    positionValue: PropTypes.number,
+    fadeInDuration: PropTypes.number,
+    fadeOutDuration: PropTypes.number,
+    opacity: PropTypes.number
+};
 
 Toast.defaultProps = {
-    position: 'bottom',
+    position: "bottom",
     textStyle: styles.text,
     positionValue: 120,
     fadeInDuration: 500,
     fadeOutDuration: 500,
     opacity: 1
-}
+};
